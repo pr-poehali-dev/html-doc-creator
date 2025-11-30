@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
 import { Progress } from '@/components/ui/progress';
+import { jsPDF } from 'jspdf';
+import { toast } from 'sonner';
 
 type ChecklistItem = {
   id: string;
@@ -96,6 +98,71 @@ const Index = () => {
     return categoryItems.length > 0 ? Math.round((completed / categoryItems.length) * 100) : 0;
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const progress = getProgress();
+    
+    doc.setFontSize(22);
+    doc.text('Чек-лист проекта', pageWidth / 2, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.text(`Дата: ${new Date().toLocaleDateString('ru-RU')}`, pageWidth / 2, 30, { align: 'center' });
+    doc.text(`Общий прогресс: ${progress}%`, pageWidth / 2, 37, { align: 'center' });
+    
+    let yPosition = 50;
+    const lineHeight = 7;
+    const margin = 20;
+    const maxWidth = pageWidth - 2 * margin;
+    
+    categories.forEach((category) => {
+      const categoryItems = items.filter(item => item.category === category.id);
+      const categoryProgress = getCategoryProgress(category.id);
+      
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${category.label} (${categoryProgress}%)`, margin, yPosition);
+      yPosition += lineHeight + 2;
+      
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      
+      categoryItems.forEach((item) => {
+        if (yPosition > 270) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        const checkbox = item.checked ? '[✓]' : '[ ]';
+        doc.text(checkbox, margin, yPosition);
+        
+        const titleLines = doc.splitTextToSize(item.title, maxWidth - 15);
+        doc.text(titleLines, margin + 10, yPosition);
+        yPosition += lineHeight * titleLines.length;
+        
+        if (item.description) {
+          doc.setTextColor(100, 100, 100);
+          const descLines = doc.splitTextToSize(item.description, maxWidth - 15);
+          doc.text(descLines, margin + 10, yPosition);
+          yPosition += lineHeight * descLines.length;
+          doc.setTextColor(0, 0, 0);
+        }
+        
+        yPosition += 3;
+      });
+      
+      yPosition += 5;
+    });
+    
+    doc.save(`checklist-${new Date().toISOString().split('T')[0]}.pdf`);
+    toast.success('PDF успешно экспортирован!');
+  };
+
   const SidebarContent = () => (
     <div className="space-y-2">
       <div className="px-3 py-6">
@@ -167,7 +234,7 @@ const Index = () => {
             <Badge variant="secondary" className="hidden sm:flex">
               {items.filter(i => i.checked).length} / {items.length}
             </Badge>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={exportToPDF}>
               <Icon name="Download" size={20} />
             </Button>
           </div>

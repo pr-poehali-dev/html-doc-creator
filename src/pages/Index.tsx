@@ -27,6 +27,15 @@ type Category = {
 
 const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [checklistTitle, setChecklistTitle] = useState(() => {
+    const saved = localStorage.getItem('checklist-title');
+    return saved || 'Чек-лист проекта';
+  });
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  
+  useEffect(() => {
+    localStorage.setItem('checklist-title', checklistTitle);
+  }, [checklistTitle]);
   
   const categories: Category[] = [
     { id: 'setup', label: 'Настройка', icon: 'Settings', color: 'primary' },
@@ -104,7 +113,7 @@ const Index = () => {
     const progress = getProgress();
     
     doc.setFontSize(22);
-    doc.text('Чек-лист проекта', pageWidth / 2, 20, { align: 'center' });
+    doc.text(checklistTitle, pageWidth / 2, 20, { align: 'center' });
     
     doc.setFontSize(12);
     doc.text(`Дата: ${new Date().toLocaleDateString('ru-RU')}`, pageWidth / 2, 30, { align: 'center' });
@@ -226,9 +235,24 @@ const Index = () => {
               </SheetContent>
             </Sheet>
             <Icon name="ListChecks" size={28} className="text-primary" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-              Чек-лист проекта
-            </h1>
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={checklistTitle}
+                onChange={(e) => setChecklistTitle(e.target.value)}
+                onBlur={() => setIsEditingTitle(false)}
+                onKeyDown={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                className="text-xl font-bold bg-transparent border-b-2 border-primary outline-none px-2"
+                autoFocus
+              />
+            ) : (
+              <h1 
+                className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent cursor-pointer hover:opacity-70 transition-opacity"
+                onClick={() => setIsEditingTitle(true)}
+              >
+                {checklistTitle}
+              </h1>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="hidden sm:flex">
@@ -251,7 +275,7 @@ const Index = () => {
             <Card className="p-6 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Общий прогресс</h2>
+                  <h2 className="text-2xl font-bold mb-2">{checklistTitle}</h2>
                   <p className="text-muted-foreground">
                     Выполнено {items.filter(i => i.checked).length} из {items.length} задач
                   </p>

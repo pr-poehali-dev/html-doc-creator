@@ -1,66 +1,145 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { Progress } from '@/components/ui/progress';
 
-type Section = 'introduction' | 'installation' | 'examples' | 'api' | 'faq' | 'support';
+type ChecklistItem = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  checked: boolean;
+};
+
+type Category = {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+};
 
 const Index = () => {
-  const [activeSection, setActiveSection] = useState<Section>('introduction');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const menuItems: { id: Section; label: string; icon: string }[] = [
-    { id: 'introduction', label: 'Введение', icon: 'Home' },
-    { id: 'installation', label: 'Установка', icon: 'Download' },
-    { id: 'examples', label: 'Примеры', icon: 'Code' },
-    { id: 'api', label: 'API', icon: 'Book' },
-    { id: 'faq', label: 'FAQ', icon: 'HelpCircle' },
-    { id: 'support', label: 'Поддержка', icon: 'MessageCircle' },
+  
+  const categories: Category[] = [
+    { id: 'setup', label: 'Настройка', icon: 'Settings', color: 'primary' },
+    { id: 'development', label: 'Разработка', icon: 'Code', color: 'secondary' },
+    { id: 'testing', label: 'Тестирование', icon: 'FlaskConical', color: 'accent' },
+    { id: 'deployment', label: 'Деплой', icon: 'Rocket', color: 'primary' },
+    { id: 'documentation', label: 'Документация', icon: 'BookOpen', color: 'secondary' },
+    { id: 'optimization', label: 'Оптимизация', icon: 'Zap', color: 'accent' },
   ];
 
-  const scrollToSection = (id: Section) => {
-    setActiveSection(id);
-    setIsMenuOpen(false);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const initialItems: ChecklistItem[] = [
+    { id: '1', title: 'Установить Node.js и npm', description: 'Скачайте последнюю LTS версию с nodejs.org', category: 'setup', checked: false },
+    { id: '2', title: 'Настроить Git и создать репозиторий', description: 'Инициализируйте проект и подключите к GitHub', category: 'setup', checked: false },
+    { id: '3', title: 'Установить зависимости проекта', description: 'Выполните npm install в корне проекта', category: 'setup', checked: false },
+    { id: '4', title: 'Настроить ESLint и Prettier', description: 'Добавьте конфигурацию для проверки кода', category: 'setup', checked: false },
+    
+    { id: '5', title: 'Создать структуру компонентов', description: 'Разделите UI на переиспользуемые компоненты', category: 'development', checked: false },
+    { id: '6', title: 'Реализовать основной функционал', description: 'Добавьте ключевые фичи приложения', category: 'development', checked: false },
+    { id: '7', title: 'Настроить маршрутизацию', description: 'Используйте React Router для навигации', category: 'development', checked: false },
+    { id: '8', title: 'Подключить API и обработку данных', description: 'Настройте запросы к бэкенду', category: 'development', checked: false },
+    
+    { id: '9', title: 'Написать unit тесты', description: 'Покройте тестами критичные функции', category: 'testing', checked: false },
+    { id: '10', title: 'Провести integration тестирование', description: 'Проверьте взаимодействие компонентов', category: 'testing', checked: false },
+    { id: '11', title: 'Выполнить E2E тестирование', description: 'Протестируйте пользовательские сценарии', category: 'testing', checked: false },
+    
+    { id: '12', title: 'Настроить CI/CD pipeline', description: 'Автоматизируйте сборку и деплой', category: 'deployment', checked: false },
+    { id: '13', title: 'Подготовить production билд', description: 'Оптимизируйте код для продакшена', category: 'deployment', checked: false },
+    { id: '14', title: 'Развернуть на хостинге', description: 'Загрузите приложение на сервер', category: 'deployment', checked: false },
+    
+    { id: '15', title: 'Написать README', description: 'Опишите проект и инструкции по запуску', category: 'documentation', checked: false },
+    { id: '16', title: 'Создать документацию API', description: 'Задокументируйте все эндпоинты', category: 'documentation', checked: false },
+    { id: '17', title: 'Добавить примеры использования', description: 'Покажите типичные кейсы применения', category: 'documentation', checked: false },
+    
+    { id: '18', title: 'Оптимизировать производительность', description: 'Используйте lazy loading и мемоизацию', category: 'optimization', checked: false },
+    { id: '19', title: 'Настроить кеширование', description: 'Добавьте стратегию кеширования данных', category: 'optimization', checked: false },
+    { id: '20', title: 'Проверить доступность (a11y)', description: 'Убедитесь что сайт доступен всем', category: 'optimization', checked: false },
+  ];
+
+  const [items, setItems] = useState<ChecklistItem[]>(() => {
+    const saved = localStorage.getItem('checklist-items');
+    return saved ? JSON.parse(saved) : initialItems;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('checklist-items', JSON.stringify(items));
+  }, [items]);
+
+  const toggleItem = (id: string) => {
+    setItems(items.map(item => 
+      item.id === id ? { ...item, checked: !item.checked } : item
+    ));
+  };
+
+  const resetAll = () => {
+    if (confirm('Сбросить весь прогресс?')) {
+      setItems(items.map(item => ({ ...item, checked: false })));
     }
+  };
+
+  const getProgress = () => {
+    const total = items.length;
+    const completed = items.filter(item => item.checked).length;
+    return Math.round((completed / total) * 100);
+  };
+
+  const getCategoryProgress = (categoryId: string) => {
+    const categoryItems = items.filter(item => item.category === categoryId);
+    const completed = categoryItems.filter(item => item.checked).length;
+    return categoryItems.length > 0 ? Math.round((completed / categoryItems.length) * 100) : 0;
   };
 
   const SidebarContent = () => (
     <div className="space-y-2">
       <div className="px-3 py-6">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Документация
+          Чек-лист
         </h2>
-        <p className="text-sm text-muted-foreground mt-2">Версия 1.0.0</p>
+        <p className="text-sm text-muted-foreground mt-2">Прогресс: {getProgress()}%</p>
+        <Progress value={getProgress()} className="mt-3" />
       </div>
       <Separator />
-      <nav className="space-y-1 py-4">
-        {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => scrollToSection(item.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-all hover:bg-sidebar-accent ${
-              activeSection === item.id
-                ? 'bg-gradient-to-r from-primary/10 to-accent/10 text-primary font-semibold border-l-4 border-primary'
-                : 'text-sidebar-foreground'
-            }`}
-          >
-            <Icon name={item.icon} size={20} />
-            <span>{item.label}</span>
-          </button>
-        ))}
+      <nav className="space-y-1 py-4 px-2">
+        {categories.map((cat) => {
+          const progress = getCategoryProgress(cat.id);
+          return (
+            <a
+              key={cat.id}
+              href={`#${cat.id}`}
+              onClick={() => setIsMenuOpen(false)}
+              className="block px-3 py-3 rounded-lg hover:bg-sidebar-accent transition-all"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <Icon name={cat.icon} size={18} className="text-primary" />
+                  <span className="font-medium text-sm">{cat.label}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-1" />
+            </a>
+          );
+        })}
       </nav>
+      <Separator />
+      <div className="p-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={resetAll}
+        >
+          <Icon name="RotateCcw" size={16} className="mr-2" />
+          Сбросить всё
+        </Button>
+      </div>
     </div>
   );
 
@@ -79,19 +158,17 @@ const Index = () => {
                 <SidebarContent />
               </SheetContent>
             </Sheet>
+            <Icon name="ListChecks" size={28} className="text-primary" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-              DocHub
+              Чек-лист проекта
             </h1>
-            <Badge variant="secondary" className="hidden sm:inline-flex">
-              v1.0.0
-            </Badge>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="hidden sm:flex">
+              {items.filter(i => i.checked).length} / {items.length}
+            </Badge>
             <Button variant="ghost" size="icon">
-              <Icon name="Github" size={20} />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Icon name="Moon" size={20} />
+              <Icon name="Download" size={20} />
             </Button>
           </div>
         </div>
@@ -103,295 +180,88 @@ const Index = () => {
         </aside>
 
         <main className="flex-1 p-6 lg:p-10 max-w-4xl animate-fade-in">
-          <section id="introduction" className="mb-16 scroll-mt-20">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Icon name="Rocket" size={32} className="text-primary" />
-              <h2 className="text-4xl font-bold">Введение</h2>
-            </div>
-            <Card className="p-8 shadow-lg hover:shadow-xl transition-all border-l-4 border-primary">
-              <p className="text-lg text-foreground/80 leading-relaxed mb-4">
-                Добро пожаловать в нашу документацию! Этот проект создан для упрощения
-                разработки и предоставления мощных инструментов для ваших задач.
-              </p>
-              <p className="text-foreground/70 leading-relaxed mb-6">
-                Мы стремимся предоставить простой и понятный интерфейс, который позволит
-                вам быстро начать работу и достичь результатов. Наша платформа поддерживает
-                современные стандарты и постоянно обновляется.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Badge className="bg-primary">React</Badge>
-                <Badge className="bg-secondary">TypeScript</Badge>
-                <Badge className="bg-accent">Современный</Badge>
-                <Badge variant="outline">Open Source</Badge>
-              </div>
-            </Card>
-          </section>
-
-          <section id="installation" className="mb-16 scroll-mt-20">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Icon name="Download" size={32} className="text-secondary" />
-              <h2 className="text-4xl font-bold">Установка</h2>
-            </div>
-            <Card className="p-8 shadow-lg hover:shadow-xl transition-all">
-              <p className="text-foreground/80 mb-6">
-                Начните работу всего за несколько простых шагов:
-              </p>
-              <div className="space-y-4">
-                <div className="flex gap-4 items-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
-                    1
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-2">Установите зависимости</h3>
-                    <div className="bg-muted p-4 rounded-lg font-mono text-sm">
-                      npm install dochub-sdk
-                    </div>
-                  </div>
+          <div className="mb-8">
+            <Card className="p-6 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Общий прогресс</h2>
+                  <p className="text-muted-foreground">
+                    Выполнено {items.filter(i => i.checked).length} из {items.length} задач
+                  </p>
                 </div>
-                <div className="flex gap-4 items-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
-                    2
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-2">Импортируйте библиотеку</h3>
-                    <div className="bg-muted p-4 rounded-lg font-mono text-sm">
-                      import &#123; DocHub &#125; from 'dochub-sdk'
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
-                    3
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-2">Начните использовать</h3>
-                    <p className="text-foreground/70">
-                      Готово! Теперь вы можете использовать все возможности платформы.
-                    </p>
-                  </div>
+                <div className="text-5xl font-bold text-primary">
+                  {getProgress()}%
                 </div>
               </div>
+              <Progress value={getProgress()} className="mt-4 h-3" />
             </Card>
-          </section>
+          </div>
 
-          <section id="examples" className="mb-16 scroll-mt-20">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Icon name="Code" size={32} className="text-accent" />
-              <h2 className="text-4xl font-bold">Примеры</h2>
-            </div>
-            <div className="grid gap-6">
-              <Card className="p-6 shadow-lg hover:shadow-xl transition-all">
-                <h3 className="font-semibold text-xl mb-3 flex items-center gap-2">
-                  <Icon name="Zap" size={20} className="text-primary" />
-                  Быстрый старт
-                </h3>
-                <div className="bg-muted p-4 rounded-lg font-mono text-sm mb-3">
-                  <pre className="text-foreground/80">
-{`const hub = new DocHub({
-  apiKey: 'your-api-key'
-});
-
-hub.init();`}
-                  </pre>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Самый простой способ начать работу с платформой.
-                </p>
-              </Card>
-
-              <Card className="p-6 shadow-lg hover:shadow-xl transition-all">
-                <h3 className="font-semibold text-xl mb-3 flex items-center gap-2">
-                  <Icon name="Settings" size={20} className="text-secondary" />
-                  Продвинутая конфигурация
-                </h3>
-                <div className="bg-muted p-4 rounded-lg font-mono text-sm mb-3">
-                  <pre className="text-foreground/80">
-{`const hub = new DocHub({
-  apiKey: 'your-api-key',
-  options: {
-    cache: true,
-    timeout: 5000
-  }
-});`}
-                  </pre>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Настройте параметры под ваши нужды для оптимальной работы.
-                </p>
-              </Card>
-            </div>
-          </section>
-
-          <section id="api" className="mb-16 scroll-mt-20">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Icon name="Book" size={32} className="text-primary" />
-              <h2 className="text-4xl font-bold">API Справочник</h2>
-            </div>
-            <Card className="p-8 shadow-lg">
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <Badge className="bg-secondary">GET</Badge>
-                    <code className="text-sm font-mono">/api/docs</code>
+          {categories.map((category) => {
+            const categoryItems = items.filter(item => item.category === category.id);
+            const completedCount = categoryItems.filter(item => item.checked).length;
+            
+            return (
+              <section key={category.id} id={category.id} className="mb-12 scroll-mt-20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Icon name={category.icon} size={28} className="text-primary" />
+                    <h2 className="text-3xl font-bold">{category.label}</h2>
                   </div>
-                  <p className="text-foreground/70">
-                    Получить список всех доступных документов.
-                  </p>
+                  <Badge variant="outline">
+                    {completedCount} / {categoryItems.length}
+                  </Badge>
                 </div>
-                <Separator />
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <Badge className="bg-primary">POST</Badge>
-                    <code className="text-sm font-mono">/api/docs/create</code>
-                  </div>
-                  <p className="text-foreground/70">
-                    Создать новый документ с заданными параметрами.
-                  </p>
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <Badge className="bg-accent">PUT</Badge>
-                    <code className="text-sm font-mono">/api/docs/:id</code>
-                  </div>
-                  <p className="text-foreground/70">
-                    Обновить существующий документ по его ID.
-                  </p>
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <Badge variant="destructive">DELETE</Badge>
-                    <code className="text-sm font-mono">/api/docs/:id</code>
-                  </div>
-                  <p className="text-foreground/70">
-                    Удалить документ из системы.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </section>
 
-          <section id="faq" className="mb-16 scroll-mt-20">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Icon name="HelpCircle" size={32} className="text-accent" />
-              <h2 className="text-4xl font-bold">FAQ</h2>
-            </div>
-            <Card className="p-6 shadow-lg">
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="item-1">
-                  <AccordionTrigger className="text-left font-semibold">
-                    Как начать использовать платформу?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-foreground/70">
-                    Просто следуйте инструкциям в разделе "Установка". Процесс занимает
-                    не более 5 минут и не требует специальных знаний.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-2">
-                  <AccordionTrigger className="text-left font-semibold">
-                    Какие есть ограничения бесплатного плана?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-foreground/70">
-                    Бесплатный план включает до 1000 запросов в месяц и базовую
-                    поддержку. Для больших нагрузок рекомендуем рассмотреть платные планы.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-3">
-                  <AccordionTrigger className="text-left font-semibold">
-                    Как получить API ключ?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-foreground/70">
-                    Зарегистрируйтесь на платформе и перейдите в настройки аккаунта.
-                    Там вы найдете раздел "API ключи", где можно сгенерировать новый ключ.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="item-4">
-                  <AccordionTrigger className="text-left font-semibold">
-                    Поддерживается ли TypeScript?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-foreground/70">
-                    Да! Наша библиотека полностью написана на TypeScript и включает
-                    все необходимые типы для комфортной разработки.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </Card>
-          </section>
-
-          <section id="support" className="mb-16 scroll-mt-20">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Icon name="MessageCircle" size={32} className="text-secondary" />
-              <h2 className="text-4xl font-bold">Поддержка</h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card className="p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-primary/10">
-                    <Icon name="Mail" size={24} className="text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-xl">Email</h3>
+                <div className="space-y-3">
+                  {categoryItems.map((item) => (
+                    <Card
+                      key={item.id}
+                      className={`p-5 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                        item.checked ? 'bg-muted/50 border-primary/30' : ''
+                      }`}
+                      onClick={() => toggleItem(item.id)}
+                    >
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          checked={item.checked}
+                          onCheckedChange={() => toggleItem(item.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <h3
+                            className={`font-semibold text-lg mb-1 transition-all ${
+                              item.checked
+                                ? 'line-through text-muted-foreground'
+                                : 'text-foreground'
+                            }`}
+                          >
+                            {item.title}
+                          </h3>
+                          <p
+                            className={`text-sm transition-all ${
+                              item.checked
+                                ? 'text-muted-foreground/70'
+                                : 'text-muted-foreground'
+                            }`}
+                          >
+                            {item.description}
+                          </p>
+                        </div>
+                        {item.checked && (
+                          <Icon
+                            name="CheckCircle2"
+                            size={24}
+                            className="text-primary flex-shrink-0"
+                          />
+                        )}
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-                <p className="text-foreground/70 mb-3">
-                  Напишите нам на почту для детальной консультации.
-                </p>
-                <a
-                  href="mailto:support@dochub.com"
-                  className="text-primary hover:underline font-medium"
-                >
-                  support@dochub.com
-                </a>
-              </Card>
-
-              <Card className="p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-secondary/10">
-                    <Icon name="MessageSquare" size={24} className="text-secondary" />
-                  </div>
-                  <h3 className="font-semibold text-xl">Чат</h3>
-                </div>
-                <p className="text-foreground/70 mb-3">
-                  Онлайн-чат доступен с 9:00 до 21:00 по МСК.
-                </p>
-                <Button className="bg-secondary hover:bg-secondary/90">
-                  Открыть чат
-                </Button>
-              </Card>
-
-              <Card className="p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-accent/10">
-                    <Icon name="Github" size={24} className="text-accent" />
-                  </div>
-                  <h3 className="font-semibold text-xl">GitHub</h3>
-                </div>
-                <p className="text-foreground/70 mb-3">
-                  Сообщите о баге или предложите улучшение.
-                </p>
-                <a
-                  href="https://github.com/dochub"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent hover:underline font-medium"
-                >
-                  github.com/dochub
-                </a>
-              </Card>
-
-              <Card className="p-6 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-primary/10">
-                    <Icon name="BookOpen" size={24} className="text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-xl">База знаний</h3>
-                </div>
-                <p className="text-foreground/70 mb-3">
-                  Изучите руководства и статьи по использованию.
-                </p>
-                <Button variant="outline">Перейти к статьям</Button>
-              </Card>
-            </div>
-          </section>
+              </section>
+            );
+          })}
         </main>
       </div>
     </div>
